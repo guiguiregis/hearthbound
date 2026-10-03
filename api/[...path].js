@@ -16,7 +16,7 @@ export default async function vercelHandler(req, res) {
         JSON.stringify({
           error:
             err.message ||
-            'API is not configured. Set DATABASE_URL (Neon/Postgres) and HEARTHBOUND_JWT_SECRET in Vercel.',
+            'API is not configured. Set DATABASE_URL (Supabase) and HEARTHBOUND_JWT_SECRET in Vercel.',
         }),
       )
       return

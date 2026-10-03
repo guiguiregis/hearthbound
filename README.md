@@ -31,20 +31,33 @@ npm run dev
 | `npm run build` | Production frontend build |
 | `npm start` | API only (SQLite) |
 
-## Deploy on Vercel
+## Deploy on Vercel + Supabase
 
-Production uses a serverless Express handler in `api/[...path].js` with **Neon/Postgres** (not SQLite).
+Production uses a serverless Express handler in `api/[...path].js` with **Supabase Postgres**.
 
-In **Vercel → Project → Settings → Environment Variables**, set:
+### 1. Get the Supabase database URL
+
+1. Open [supabase.com](https://supabase.com) → your project (or create one)
+2. **Project Settings → Database → Connection string → URI**
+3. Prefer the **Transaction** pooler (port **6543**) for Vercel serverless
+4. Replace `[YOUR-PASSWORD]` with the database password
+
+### 2. Set Vercel env vars
+
+In **Vercel → Project → Settings → Environment Variables**:
 
 | Name | Value | Environments |
 |------|--------|--------------|
 | `HEARTHBOUND_JWT_SECRET` | `openssl rand -hex 32` | Production (+ Preview) |
-| `DATABASE_URL` | Neon connection string | Production (+ Preview) |
+| `DATABASE_URL` | Supabase Postgres URI | Production (+ Preview) |
 
-`POSTGRES_URL` also works if you use Vercel’s Neon integration.
+`SUPABASE_DB_URL` and `POSTGRES_URL` are also accepted.
 
-Then redeploy. After deploy, register again on production (local SQLite accounts are not migrated). Create Damakos from the in-app preset if needed.
+### 3. Redeploy
+
+Tables (`users`, `characters`) are created automatically on first API request.
+
+Local SQLite accounts are not migrated — register again on production and recreate Damakos from the in-app preset if needed.
 
 SPA routes rewrite to `index.html`; `/api/*` is handled by the serverless function (this fixes the production **405** that happened when POSTs hit the static SPA).
 
