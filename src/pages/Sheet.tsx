@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { CharacterSearch } from '../components/CharacterSearch'
+import { DiceInput } from '../components/DiceInput'
 import { ABILITY_LABELS, ABILITY_SHORT, SKILLS } from '../data/dnd'
 import { useCharacters } from '../context/CharacterContext'
 import type { SearchHit } from '../lib/search'
@@ -15,7 +16,7 @@ import {
 } from '../lib/stats'
 import type { AbilityKey, Attack, Feature, InventoryItem, SessionNote, SpellEntry } from '../types/character'
 
-type Tab = 'combat' | 'skills' | 'features' | 'gear' | 'magic' | 'story'
+type Tab = 'combat' | 'skills' | 'features' | 'gear' | 'magic' | 'story' | 'dice'
 
 const emptyFeatureForm = {
   name: '',
@@ -238,6 +239,7 @@ export function Sheet() {
                 ['gear', 'Gear'],
                 ['magic', 'Magic'],
                 ['story', 'Story'],
+                ['dice', 'Dice'],
               ] as const
             ).map(([key, label]) => (
               <button
@@ -1141,6 +1143,21 @@ export function Sheet() {
                 ))}
               </div>
             </div>
+          )}
+
+          {tab === 'dice' && (
+            <DiceInput
+              character={character}
+              onLog={(breakdown) => {
+                const note = {
+                  id: uid(),
+                  title: 'Dice roll',
+                  body: breakdown.summary,
+                  createdAt: new Date().toISOString(),
+                }
+                patch({ sessionLog: [note, ...(character.sessionLog ?? [])] })
+              }}
+            />
           )}
         </div>
       </div>

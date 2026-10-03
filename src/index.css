@@ -724,6 +724,53 @@ textarea {
   animation: search-pulse 1.1s ease;
 }
 
+.dice-faces {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.75rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.dice-face {
+  text-align: center;
+}
+
+.dice-face input {
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.dice-result {
+  margin-top: 1.25rem;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(212, 168, 75, 0.35);
+  background: rgba(212, 168, 75, 0.08);
+}
+
+.dice-error {
+  color: #ffb4ae;
+  margin: 0.5rem 0 0;
+}
+
+.dice-flag {
+  margin: 0.5rem 0 0;
+  font-weight: 600;
+}
+
+.dice-flag.success {
+  color: var(--moss-bright);
+}
+
+.dice-flag.fail {
+  color: #ffb4ae;
+}
+
+.dice-panel h2 {
+  margin-bottom: 0.35rem;
+}
+
 @keyframes search-pulse {
   from {
     box-shadow: 0 0 0 0 rgba(212, 168, 75, 0.35);

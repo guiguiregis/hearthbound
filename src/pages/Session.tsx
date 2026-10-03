@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
+import { DiceInput } from '../components/DiceInput'
 import { CONDITIONS } from '../data/dnd'
 import { useCharacters } from '../context/CharacterContext'
+import type { RollBreakdown } from '../lib/dice'
 import { uid } from '../lib/storage'
 import { formatModifier, hpPercent } from '../lib/stats'
 import type { Condition, SessionNote } from '../types/character'
@@ -106,6 +108,10 @@ export function Session() {
     setNoteBody('')
   }
 
+  function logRoll(breakdown: RollBreakdown) {
+    appendLog('Dice roll', breakdown.summary)
+  }
+
   return (
     <section className="section" style={{ marginTop: 0 }}>
       <div className="sheet-header">
@@ -124,6 +130,10 @@ export function Session() {
             Roster
           </Link>
         </div>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <DiceInput character={character} onLog={logRoll} />
       </div>
 
       <div className="session-grid">

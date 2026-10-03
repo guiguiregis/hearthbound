@@ -2,7 +2,7 @@ import { ABILITY_LABELS, SKILLS } from '../data/dnd'
 import { formatModifier, skillModifier } from './stats'
 import type { Character } from '../types/character'
 
-export type SheetTab = 'combat' | 'skills' | 'features' | 'gear' | 'magic' | 'story'
+export type SheetTab = 'combat' | 'skills' | 'features' | 'gear' | 'magic' | 'story' | 'dice'
 
 export interface SearchHit {
   id: string
