@@ -31,7 +31,22 @@ npm run dev
 
 Data is stored in `server/data/hearthbound.sqlite` (gitignored).
 
+## Vercel (frontend)
+
+1. Deploy the Vite app to Vercel (Root Directory = repo root, Build = `npm run build`, Output = `dist`).
+2. In **Project → Settings → Environment Variables**, add:
+
+| Name | Value |
+|------|--------|
+| `HEARTHBOUND_JWT_SECRET` | a long random secret (generate with `openssl rand -hex 32`) |
+
+Apply to **Production** (and Preview if you want). Redeploy after saving.
+
+3. The Express + SQLite API in `server/` does **not** run on Vercel serverless as-is. Host the API separately (Railway, Render, Fly, a VPS) and point the frontend at it, or keep using `npm run dev` locally for full-stack.
+
+For a separate API host, set the same `HEARTHBOUND_JWT_SECRET` there and expose `PORT`.
+
 ## Notes
 
-- Set `HEARTHBOUND_JWT_SECRET` in production.
+- Set `HEARTHBOUND_JWT_SECRET` in production (never use the dev default).
 - SRD tips use the public [D&D 5e API](https://www.dnd5eapi.co/); full official books are not included.
