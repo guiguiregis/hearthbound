@@ -30,7 +30,12 @@ export function createApp(store) {
     res.json({
       ok: true,
       service: 'hearthbound',
-      db: process.env.DATABASE_URL || process.env.POSTGRES_URL ? 'postgres' : 'sqlite',
+      db:
+        process.env.DATABASE_URL ||
+        process.env.POSTGRES_URL ||
+        process.env.SUPABASE_DB_URL
+          ? 'postgres'
+          : 'sqlite',
     })
   })
 
