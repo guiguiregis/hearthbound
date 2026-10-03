@@ -1,10 +1,15 @@
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCharacters } from '../context/CharacterContext'
 import { createDamakos } from '../lib/presets'
+import { searchRoster } from '../lib/search'
 
 export function Roster() {
   const { characters, addCharacter, updateCharacter, deleteCharacter, ready } = useCharacters()
   const navigate = useNavigate()
+  const [query, setQuery] = useState('')
+
+  const hits = useMemo(() => searchRoster(characters, query), [characters, query])
 
   if (!ready) return <p className="empty-state">Loading roster…</p>
 
@@ -37,6 +42,49 @@ export function Roster() {
           </Link>
         </div>
       </div>
+
+      <div className="char-search" style={{ marginBottom: '1.5rem' }}>
+        <label className="char-search-label" htmlFor="roster-search">
+          Search all characters
+        </label>
+        <input
+          id="roster-search"
+          className="char-search-input"
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Find features, gear, notes across your roster…"
+        />
+      </div>
+
+      {query.trim() && (
+        <div className="panel" style={{ marginBottom: '1.5rem' }}>
+          <h2>Search results</h2>
+          {hits.length === 0 ? (
+            <p className="meta">No matches for “{query.trim()}”.</p>
+          ) : (
+            <div className="list-block">
+              {hits.slice(0, 20).map((hit) => (
+                <button
+                  key={`${hit.characterId}-${hit.id}`}
+                  type="button"
+                  className="list-row"
+                  style={{ width: '100%', cursor: 'pointer', textAlign: 'left' }}
+                  onClick={() => navigate(`/characters/${hit.characterId}`)}
+                >
+                  <div>
+                    <span className="char-search-cat">
+                      {hit.characterName} · {hit.category}
+                    </span>
+                    <strong style={{ display: 'block' }}>{hit.title}</strong>
+                    {hit.snippet && <div className="meta">{hit.snippet}</div>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {characters.length === 0 ? (
         <div className="panel">

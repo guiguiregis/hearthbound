@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
+import { CharacterSearch } from '../components/CharacterSearch'
 import { ABILITY_LABELS, ABILITY_SHORT, SKILLS } from '../data/dnd'
 import { useCharacters } from '../context/CharacterContext'
+import type { SearchHit } from '../lib/search'
 import { uid } from '../lib/storage'
 import {
   abilityModifier,
@@ -43,6 +45,7 @@ export function Sheet() {
   const [attackDamage, setAttackDamage] = useState('1d6')
   const [noteTitle, setNoteTitle] = useState('')
   const [noteBody, setNoteBody] = useState('')
+  const [highlightId, setHighlightId] = useState<string | null>(null)
 
   const percent = useMemo(() => (character ? hpPercent(character) : 0), [character])
 
@@ -51,6 +54,16 @@ export function Sheet() {
 
   function patch(partial: Parameters<typeof updateCharacter>[1]) {
     updateCharacter(character!.id, partial)
+  }
+
+  function handleSearchSelect(hit: SearchHit) {
+    setTab(hit.tab)
+    setHighlightId(hit.id)
+    window.setTimeout(() => {
+      const el = document.getElementById(`search-${hit.id}`)
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 50)
+    window.setTimeout(() => setHighlightId((current) => (current === hit.id ? null : current)), 2200)
   }
 
   function setAbility(key: AbilityKey, value: number) {
@@ -163,6 +176,8 @@ export function Sheet() {
           </Link>
         </div>
       </div>
+
+      <CharacterSearch character={character} onSelect={handleSearchSelect} />
 
       <div className="combat-bar">
         <div className="stat-chip">
@@ -344,7 +359,11 @@ export function Sheet() {
                   <p className="meta">No attacks listed yet.</p>
                 )}
                 {(character.attacks ?? []).map((a) => (
-                  <div key={a.id} className="list-row">
+                  <div
+                    key={a.id}
+                    id={`search-attack-${a.id}`}
+                    className={`list-row ${highlightId === `attack-${a.id}` ? 'search-highlight' : ''}`}
+                  >
                     <div>
                       <strong>{a.name}</strong>
                       <div className="meta">
@@ -449,7 +468,12 @@ export function Sheet() {
                 {character.features.map((f) => {
                   const uses = f.uses ?? { used: 0, total: 0 }
                   return (
-                    <article key={f.id} className="list-row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: '0.65rem' }}>
+                    <article
+                      key={f.id}
+                      id={`search-feature-${f.id}`}
+                      className={`list-row ${highlightId === `feature-${f.id}` ? 'search-highlight' : ''}`}
+                      style={{ alignItems: 'flex-start', flexDirection: 'column', gap: '0.65rem' }}
+                    >
                       <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
                         <div>
                           <strong>{f.name}</strong>
@@ -698,7 +722,11 @@ export function Sheet() {
                     expertise,
                   )
                   return (
-                    <div key={skill.key} className="list-row">
+                    <div
+                      key={skill.key}
+                      id={`search-skill-${skill.key}`}
+                      className={`list-row ${highlightId === `skill-${skill.key}` ? 'search-highlight' : ''}`}
+                    >
                       <span>
                         <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', cursor: 'pointer' }}>
                           <input
@@ -787,7 +815,11 @@ export function Sheet() {
               <div className="list-block">
                 {character.inventory.length === 0 && <p className="meta">Pack is empty.</p>}
                 {character.inventory.map((item) => (
-                  <div key={item.id} className="list-row">
+                  <div
+                    key={item.id}
+                    id={`search-item-${item.id}`}
+                    className={`list-row ${highlightId === `item-${item.id}` ? 'search-highlight' : ''}`}
+                  >
                     <div>
                       <strong>{item.name}</strong>
                       <div className="meta">
@@ -850,7 +882,11 @@ export function Sheet() {
                   <p className="meta">No spells recorded yet.</p>
                 )}
                 {character.spells.map((spell) => (
-                  <div key={spell.id} className="list-row">
+                  <div
+                    key={spell.id}
+                    id={`search-spell-${spell.id}`}
+                    className={`list-row ${highlightId === `spell-${spell.id}` ? 'search-highlight' : ''}`}
+                  >
                     <div>
                       <strong>{spell.name}</strong>
                       <div className="meta">
@@ -897,7 +933,11 @@ export function Sheet() {
           {tab === 'story' && (
             <div className="panel">
               <h2>Personality &amp; notes</h2>
-              <div className="form-grid">
+              <div
+                id="search-appearance"
+                className={`form-grid ${highlightId === 'appearance' ? 'search-highlight' : ''}`}
+                style={{ padding: highlightId === 'appearance' ? '0.75rem' : undefined, borderRadius: 14 }}
+              >
                 <label>
                   Age
                   <input
@@ -975,7 +1015,10 @@ export function Sheet() {
                     }
                   />
                 </label>
-                <label className="full">
+                <label
+                  className={`full ${highlightId === 'traits' ? 'search-highlight' : ''}`}
+                  id="search-traits"
+                >
                   Traits
                   <textarea
                     value={character.personality.traits}
@@ -986,7 +1029,10 @@ export function Sheet() {
                     }
                   />
                 </label>
-                <label>
+                <label
+                  id="search-ideals"
+                  className={highlightId === 'ideals' ? 'search-highlight' : ''}
+                >
                   Ideals
                   <textarea
                     value={character.personality.ideals}
@@ -997,7 +1043,10 @@ export function Sheet() {
                     }
                   />
                 </label>
-                <label>
+                <label
+                  id="search-bonds"
+                  className={highlightId === 'bonds' ? 'search-highlight' : ''}
+                >
                   Bonds
                   <textarea
                     value={character.personality.bonds}
@@ -1008,7 +1057,10 @@ export function Sheet() {
                     }
                   />
                 </label>
-                <label className="full">
+                <label
+                  className={`full ${highlightId === 'flaws' ? 'search-highlight' : ''}`}
+                  id="search-flaws"
+                >
                   Flaws
                   <textarea
                     value={character.personality.flaws}
@@ -1019,7 +1071,10 @@ export function Sheet() {
                     }
                   />
                 </label>
-                <label className="full">
+                <label
+                  className={`full ${highlightId === 'scratch' ? 'search-highlight' : ''}`}
+                  id="search-scratch"
+                >
                   Scratch pad
                   <textarea
                     value={character.sessionNotes}
@@ -1060,7 +1115,12 @@ export function Sheet() {
                   <p className="meta">No session log entries yet.</p>
                 )}
                 {(character.sessionLog ?? []).map((note) => (
-                  <div key={note.id} className="list-row" style={{ alignItems: 'flex-start' }}>
+                  <div
+                    key={note.id}
+                    id={`search-note-${note.id}`}
+                    className={`list-row ${highlightId === `note-${note.id}` ? 'search-highlight' : ''}`}
+                    style={{ alignItems: 'flex-start' }}
+                  >
                     <div>
                       <strong>{note.title}</strong>
                       <div className="meta">{new Date(note.createdAt).toLocaleString()}</div>
