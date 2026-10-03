@@ -7,6 +7,14 @@ export function emptyAbilities(): AbilityScores {
   return { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 }
 }
 
+export function emptyAppearance() {
+  return { age: '', height: '', weight: '', eyes: '', skin: '', hair: '', marks: '' }
+}
+
+export function emptyCurrency() {
+  return { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 }
+}
+
 export function createDraft(): CharacterDraft {
   return {
     name: '',
@@ -33,6 +41,8 @@ export function createDraft(): CharacterDraft {
     inventory: [],
     spells: [],
     spellSlots: {},
+    appearance: emptyAppearance(),
+    currency: emptyCurrency(),
     personality: { traits: '', ideals: '', bonds: '', flaws: '' },
     sessionNotes: '',
   }
@@ -66,6 +76,8 @@ export function finalizeCharacter(draft: CharacterDraft): Character {
     skillProficiencies: draft.skillProficiencies as SkillKey[],
     skillExpertise: draft.skillExpertise ?? [],
     attacks: draft.attacks ?? [],
+    appearance: draft.appearance ?? emptyAppearance(),
+    currency: draft.currency ?? emptyCurrency(),
     createdAt: now,
     updatedAt: now,
   }

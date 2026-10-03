@@ -72,6 +72,24 @@ export interface DeathSaves {
   failures: number
 }
 
+export interface Appearance {
+  age: string
+  height: string
+  weight: string
+  eyes: string
+  skin: string
+  hair: string
+  marks: string
+}
+
+export interface Currency {
+  cp: number
+  sp: number
+  ep: number
+  gp: number
+  pp: number
+}
+
 export interface Character {
   id: string
   name: string
@@ -104,6 +122,8 @@ export interface Character {
   inventory: InventoryItem[]
   spells: SpellEntry[]
   spellSlots: Record<number, { current: number; max: number }>
+  appearance: Appearance
+  currency: Currency
   personality: {
     traits: string
     ideals: string

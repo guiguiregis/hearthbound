@@ -1,4 +1,5 @@
 import type { Character } from '../types/character'
+import { emptyAppearance, emptyCurrency } from './characterFactory'
 
 const STORAGE_KEY = 'hearthbound.characters.v1'
 
@@ -8,6 +9,8 @@ function normalize(character: Character): Character {
     subclass: character.subclass ?? '',
     skillExpertise: character.skillExpertise ?? [],
     attacks: character.attacks ?? [],
+    appearance: { ...emptyAppearance(), ...(character.appearance ?? {}) },
+    currency: { ...emptyCurrency(), ...(character.currency ?? {}) },
   }
 }
 

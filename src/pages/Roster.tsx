@@ -3,20 +3,22 @@ import { useCharacters } from '../context/CharacterContext'
 import { createDamakos } from '../lib/presets'
 
 export function Roster() {
-  const { characters, addCharacter, deleteCharacter, ready } = useCharacters()
+  const { characters, addCharacter, updateCharacter, deleteCharacter, ready } = useCharacters()
   const navigate = useNavigate()
 
   if (!ready) return <p className="empty-state">Loading roster…</p>
 
   function importDamakos() {
-    const existing = characters.find((c) => c.name === 'Damakos' && c.subclass === 'Soulknife')
+    const fresh = createDamakos()
+    const existing = characters.find((c) => c.name === 'Damakos')
     if (existing) {
+      const { id: _id, createdAt, ...rest } = fresh
+      updateCharacter(existing.id, { ...rest, createdAt: existing.createdAt })
       navigate(`/characters/${existing.id}`)
       return
     }
-    const character = createDamakos()
-    addCharacter(character)
-    navigate(`/characters/${character.id}`)
+    addCharacter(fresh)
+    navigate(`/characters/${fresh.id}`)
   }
 
   return (

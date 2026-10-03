@@ -478,14 +478,43 @@ export function Sheet() {
 
           {tab === 'gear' && (
             <div className="panel">
-              <h2>Inventory</h2>
+              <h2>Inventory &amp; coin</h2>
+              <div className="form-grid" style={{ marginBottom: '1rem' }}>
+                {(['cp', 'sp', 'ep', 'gp', 'pp'] as const).map((coin) => (
+                  <label key={coin}>
+                    {coin.toUpperCase()}
+                    <input
+                      type="number"
+                      min={0}
+                      value={character.currency?.[coin] ?? 0}
+                      onChange={(e) =>
+                        patch({
+                          currency: {
+                            ...(character.currency ?? {
+                              cp: 0,
+                              sp: 0,
+                              ep: 0,
+                              gp: 0,
+                              pp: 0,
+                            }),
+                            [coin]: Math.max(0, Number(e.target.value) || 0),
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                ))}
+              </div>
               <div className="list-block">
                 {character.inventory.length === 0 && <p className="meta">Pack is empty.</p>}
                 {character.inventory.map((item) => (
                   <div key={item.id} className="list-row">
                     <div>
                       <strong>{item.name}</strong>
-                      <div className="meta">×{item.qty}</div>
+                      <div className="meta">
+                        ×{item.qty}
+                        {item.notes ? ` · ${item.notes}` : ''}
+                      </div>
                     </div>
                     <div style={{ display: 'flex', gap: '0.35rem' }}>
                       <button
@@ -590,6 +619,83 @@ export function Sheet() {
             <div className="panel">
               <h2>Personality &amp; notes</h2>
               <div className="form-grid">
+                <label>
+                  Age
+                  <input
+                    value={character.appearance?.age ?? ''}
+                    onChange={(e) =>
+                      patch({
+                        appearance: { ...character.appearance, age: e.target.value },
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  Height
+                  <input
+                    value={character.appearance?.height ?? ''}
+                    onChange={(e) =>
+                      patch({
+                        appearance: { ...character.appearance, height: e.target.value },
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  Weight
+                  <input
+                    value={character.appearance?.weight ?? ''}
+                    onChange={(e) =>
+                      patch({
+                        appearance: { ...character.appearance, weight: e.target.value },
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  Eyes
+                  <input
+                    value={character.appearance?.eyes ?? ''}
+                    onChange={(e) =>
+                      patch({
+                        appearance: { ...character.appearance, eyes: e.target.value },
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  Skin
+                  <input
+                    value={character.appearance?.skin ?? ''}
+                    onChange={(e) =>
+                      patch({
+                        appearance: { ...character.appearance, skin: e.target.value },
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  Hair
+                  <input
+                    value={character.appearance?.hair ?? ''}
+                    onChange={(e) =>
+                      patch({
+                        appearance: { ...character.appearance, hair: e.target.value },
+                      })
+                    }
+                  />
+                </label>
+                <label className="full">
+                  Distinguishing marks
+                  <input
+                    value={character.appearance?.marks ?? ''}
+                    onChange={(e) =>
+                      patch({
+                        appearance: { ...character.appearance, marks: e.target.value },
+                      })
+                    }
+                  />
+                </label>
                 <label className="full">
                   Traits
                   <textarea
