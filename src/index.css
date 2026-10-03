@@ -691,8 +691,10 @@ textarea {
 
 .char-search-hit {
   width: 100%;
-  display: grid;
-  gap: 0.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
   text-align: left;
   border: 0;
   border-bottom: 1px solid rgba(168, 181, 170, 0.1);
@@ -700,6 +702,25 @@ textarea {
   color: var(--ink);
   padding: 0.75rem 1rem;
   border-radius: 0;
+}
+
+.char-search-main {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.char-search-bonus {
+  flex: 0 0 auto;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  letter-spacing: 0.03em;
+  color: var(--brass-soft);
+  background: rgba(212, 168, 75, 0.12);
+  border: 1px solid rgba(212, 168, 75, 0.35);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  white-space: nowrap;
 }
 
 .char-search-hit:last-child {

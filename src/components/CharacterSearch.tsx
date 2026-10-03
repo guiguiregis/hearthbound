@@ -92,9 +92,12 @@ export function CharacterSearch({ character, onSelect }: CharacterSearchProps) {
                 onMouseEnter={() => setActive(index)}
                 onClick={() => choose(hit)}
               >
-                <span className="char-search-cat">{hit.category}</span>
-                <strong>{hit.title}</strong>
-                {hit.snippet && <span className="meta">{hit.snippet}</span>}
+                <span className="char-search-main">
+                  <span className="char-search-cat">{hit.category}</span>
+                  <strong>{hit.title}</strong>
+                  {hit.snippet && <span className="meta">{hit.snippet}</span>}
+                </span>
+                {hit.bonus ? <span className="char-search-bonus">{hit.bonus}</span> : null}
               </button>
             ))
           )}

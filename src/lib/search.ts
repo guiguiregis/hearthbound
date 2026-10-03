@@ -1,5 +1,10 @@
-import { ABILITY_LABELS, SKILLS } from '../data/dnd'
-import { formatModifier, skillModifier } from './stats'
+import { ABILITY_LABELS, ABILITY_SHORT, SKILLS } from '../data/dnd'
+import {
+  abilityModifier,
+  formatModifier,
+  savingThrowModifier,
+  skillModifier,
+} from './stats'
 import type { Character } from '../types/character'
 
 export type SheetTab = 'combat' | 'skills' | 'features' | 'gear' | 'magic' | 'story' | 'dice'
@@ -10,6 +15,8 @@ export interface SearchHit {
   category: string
   title: string
   snippet: string
+  /** Prominent modifier / bonus shown in search results, e.g. "+6". */
+  bonus?: string
 }
 
 function includes(haystack: string, needle: string): boolean {
@@ -24,10 +31,18 @@ function push(
   title: string,
   snippet: string,
   query: string,
+  bonus?: string,
 ) {
-  const blob = `${title} ${snippet} ${category}`
+  const blob = `${title} ${snippet} ${category} ${bonus ?? ''}`
   if (!includes(blob, query)) return
-  hits.push({ id, tab, category, title, snippet: snippet.trim() })
+  hits.push({
+    id,
+    tab,
+    category,
+    title,
+    snippet: snippet.trim(),
+    bonus: bonus?.trim() || undefined,
+  })
 }
 
 /** Search one character's sheet fields for a query string. */
@@ -36,6 +51,7 @@ export function searchCharacter(character: Character, rawQuery: string): SearchH
   if (!query) return []
 
   const hits: SearchHit[] = []
+  const prof = formatModifier(character.proficiencyBonus)
 
   push(
     hits,
@@ -47,6 +63,7 @@ export function searchCharacter(character: Character, rawQuery: string): SearchH
       character.subclass ? ` (${character.subclass})` : ''
     } · ${character.background} · ${character.alignment}`,
     query,
+    `Prof ${prof}`,
   )
 
   push(
@@ -55,24 +72,79 @@ export function searchCharacter(character: Character, rawQuery: string): SearchH
     'combat',
     'Vitals',
     'HP / AC / Initiative',
-    `HP ${character.hp.current}/${character.hp.max} · AC ${character.armorClass} · Init ${formatModifier(character.initiative)} · Speed ${character.speed} · Prof ${formatModifier(character.proficiencyBonus)}`,
+    `HP ${character.hp.current}/${character.hp.max} · AC ${character.armorClass} · Speed ${character.speed}`,
     query,
+    `Init ${formatModifier(character.initiative)}`,
   )
 
-  for (const [key, score] of Object.entries(character.abilities)) {
-    const label = ABILITY_LABELS[key as keyof typeof ABILITY_LABELS]
-    push(hits, `ability-${key}`, 'combat', 'Ability', label, `Score ${score}`, query)
+  push(
+    hits,
+    'proficiency',
+    'combat',
+    'Bonus',
+    'Proficiency bonus',
+    `Level ${character.level}`,
+    query,
+    prof,
+  )
+
+  push(
+    hits,
+    'initiative',
+    'combat',
+    'Bonus',
+    'Initiative',
+    'Dexterity-based initiative modifier',
+    query,
+    formatModifier(character.initiative),
+  )
+
+  for (const key of ABILITY_SHORT) {
+    const score = character.abilities[key]
+    const mod = abilityModifier(score)
+    push(
+      hits,
+      `ability-${key}`,
+      'combat',
+      'Ability',
+      ABILITY_LABELS[key],
+      `Score ${score}`,
+      query,
+      formatModifier(mod),
+    )
+  }
+
+  for (const key of ABILITY_SHORT) {
+    const proficient = character.savingThrowProficiencies.includes(key)
+    const mod = savingThrowModifier(
+      character.abilities,
+      key,
+      proficient,
+      character.proficiencyBonus,
+    )
+    push(
+      hits,
+      `save-${key}`,
+      'combat',
+      'Saving throw',
+      `${ABILITY_LABELS[key]} save`,
+      proficient ? 'Proficient' : 'Not proficient',
+      query,
+      formatModifier(mod),
+    )
   }
 
   for (const attack of character.attacks ?? []) {
+    const bonusLabel = /[+-]?\d/.test(attack.bonus) ? attack.bonus : undefined
     push(
       hits,
       `attack-${attack.id}`,
       'combat',
       'Attack',
       attack.name,
-      `${attack.bonus} to hit · ${attack.damage}${attack.notes ? ` · ${attack.notes}` : ''}`,
+      `${attack.damage}${attack.notes ? ` · ${attack.notes}` : ''}`,
       query,
+      bonusLabel ? `${bonusLabel} to hit` : undefined,
     )
   }
 
@@ -92,8 +164,9 @@ export function searchCharacter(character: Character, rawQuery: string): SearchH
       'skills',
       'Skill',
       skill.label,
-      `${formatModifier(mod)}${expertise ? ' · Expertise' : proficient ? ' · Proficient' : ''}`,
+      `${skill.ability.toUpperCase()}${expertise ? ' · Expertise' : proficient ? ' · Proficient' : ''}`,
       query,
+      formatModifier(mod),
     )
   }
 
@@ -105,14 +178,22 @@ export function searchCharacter(character: Character, rawQuery: string): SearchH
       feature.action,
       feature.range,
       feature.duration,
-      feature.value,
       feature.recovers,
       uses && uses.total > 0 ? `Uses ${uses.used}/${uses.total}` : '',
       feature.description,
     ]
       .filter(Boolean)
       .join(' · ')
-    push(hits, `feature-${feature.id}`, 'features', 'Feature', feature.name, meta, query)
+    push(
+      hits,
+      `feature-${feature.id}`,
+      'features',
+      'Feature',
+      feature.name,
+      meta,
+      query,
+      feature.value || undefined,
+    )
   }
 
   for (const item of character.inventory ?? []) {
@@ -135,8 +216,9 @@ export function searchCharacter(character: Character, rawQuery: string): SearchH
       'gear',
       'Currency',
       'Coins',
-      `${currency.gp} GP · ${currency.sp} SP · ${currency.cp} CP · ${currency.ep} EP · ${currency.pp} PP`,
+      `${currency.sp} SP · ${currency.cp} CP · ${currency.ep} EP · ${currency.pp} PP`,
       query,
+      `${currency.gp} GP`,
     )
   }
 
@@ -147,8 +229,9 @@ export function searchCharacter(character: Character, rawQuery: string): SearchH
       'magic',
       'Spell',
       spell.name,
-      spell.level === 0 ? 'Cantrip' : `Level ${spell.level}`,
+      spell.prepared ? 'Prepared' : 'Not prepared',
       query,
+      spell.level === 0 ? 'Cantrip' : `Lv ${spell.level}`,
     )
   }
 
@@ -160,7 +243,15 @@ export function searchCharacter(character: Character, rawQuery: string): SearchH
       'story',
       'Appearance',
       character.name,
-      [appearance.age && `Age ${appearance.age}`, appearance.height, appearance.weight && `${appearance.weight} lb`, appearance.eyes && `${appearance.eyes} eyes`, appearance.skin, appearance.hair, appearance.marks]
+      [
+        appearance.age && `Age ${appearance.age}`,
+        appearance.height,
+        appearance.weight && `${appearance.weight} lb`,
+        appearance.eyes && `${appearance.eyes} eyes`,
+        appearance.skin,
+        appearance.hair,
+        appearance.marks,
+      ]
         .filter(Boolean)
         .join(' · '),
       query,
@@ -178,15 +269,7 @@ export function searchCharacter(character: Character, rawQuery: string): SearchH
   }
 
   for (const note of character.sessionLog ?? []) {
-    push(
-      hits,
-      `note-${note.id}`,
-      'story',
-      'Session note',
-      note.title,
-      note.body,
-      query,
-    )
+    push(hits, `note-${note.id}`, 'story', 'Session note', note.title, note.body, query)
   }
 
   for (const condition of character.conditions ?? []) {

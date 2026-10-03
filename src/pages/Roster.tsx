@@ -79,6 +79,7 @@ export function Roster() {
                     <strong style={{ display: 'block' }}>{hit.title}</strong>
                     {hit.snippet && <div className="meta">{hit.snippet}</div>}
                   </div>
+                  {hit.bonus ? <span className="char-search-bonus">{hit.bonus}</span> : null}
                 </button>
               ))}
             </div>
