@@ -18,10 +18,12 @@ export function skillModifier(
   skill: SkillKey,
   proficient: boolean,
   proficiencyBonus: number,
+  expertise = false,
 ): number {
   const meta = SKILLS.find((s) => s.key === skill)
   if (!meta) return 0
   const base = abilityModifier(abilities[meta.ability])
+  if (expertise) return base + proficiencyBonus * 2
   return base + (proficient ? proficiencyBonus : 0)
 }
 

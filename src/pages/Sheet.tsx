@@ -11,7 +11,7 @@ import {
   savingThrowModifier,
   skillModifier,
 } from '../lib/stats'
-import type { AbilityKey, Feature, InventoryItem, SpellEntry } from '../types/character'
+import type { AbilityKey, Attack, Feature, InventoryItem, SpellEntry } from '../types/character'
 
 type Tab = 'combat' | 'skills' | 'gear' | 'magic' | 'story'
 
@@ -25,6 +25,9 @@ export function Sheet() {
   const [featureDesc, setFeatureDesc] = useState('')
   const [spellName, setSpellName] = useState('')
   const [spellLevel, setSpellLevel] = useState(0)
+  const [attackName, setAttackName] = useState('')
+  const [attackBonus, setAttackBonus] = useState('+0')
+  const [attackDamage, setAttackDamage] = useState('1d6')
 
   const percent = useMemo(() => (character ? hpPercent(character) : 0), [character])
 
@@ -75,13 +78,28 @@ export function Sheet() {
     setSpellName('')
   }
 
+  function addAttack() {
+    if (!attackName.trim()) return
+    const attack: Attack = {
+      id: uid(),
+      name: attackName.trim(),
+      bonus: attackBonus.trim() || '+0',
+      damage: attackDamage.trim() || '1d6',
+    }
+    patch({ attacks: [...(character!.attacks ?? []), attack] })
+    setAttackName('')
+    setAttackBonus('+0')
+    setAttackDamage('1d6')
+  }
+
   return (
     <section className="section" style={{ marginTop: 0 }}>
       <div className="sheet-header">
         <div>
           <h1>{character.name}</h1>
           <p className="meta">
-            Level {character.level} {character.race} {character.className} · {character.background} ·{' '}
+            Level {character.level} {character.race} {character.className}
+            {character.subclass ? ` (${character.subclass})` : ''} · {character.background} ·{' '}
             {character.alignment}
           </p>
         </div>
@@ -248,7 +266,15 @@ export function Sheet() {
                     }}
                   />
                 </label>
-                <label className="full">
+                <label>
+                  Subclass
+                  <input
+                    value={character.subclass ?? ''}
+                    onChange={(e) => patch({ subclass: e.target.value })}
+                    placeholder="e.g. Soulknife"
+                  />
+                </label>
+                <label>
                   Inspiration
                   <select
                     value={character.inspiration ? 'yes' : 'no'}
@@ -258,6 +284,57 @@ export function Sheet() {
                     <option value="yes">Yes</option>
                   </select>
                 </label>
+              </div>
+
+              <h3 style={{ marginTop: '1.5rem' }}>Attacks</h3>
+              <div className="list-block">
+                {(character.attacks ?? []).length === 0 && (
+                  <p className="meta">No attacks listed yet.</p>
+                )}
+                {(character.attacks ?? []).map((a) => (
+                  <div key={a.id} className="list-row">
+                    <div>
+                      <strong>{a.name}</strong>
+                      <div className="meta">
+                        {a.bonus} to hit · {a.damage}
+                        {a.notes ? ` · ${a.notes}` : ''}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="ghost-btn"
+                      onClick={() =>
+                        patch({
+                          attacks: (character.attacks ?? []).filter((x) => x.id !== a.id),
+                        })
+                      }
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="inline-form">
+                <input
+                  value={attackName}
+                  onChange={(e) => setAttackName(e.target.value)}
+                  placeholder="Attack name"
+                />
+                <input
+                  value={attackBonus}
+                  onChange={(e) => setAttackBonus(e.target.value)}
+                  placeholder="+6"
+                  style={{ flex: '0 0 90px' }}
+                  aria-label="Attack bonus"
+                />
+                <input
+                  value={attackDamage}
+                  onChange={(e) => setAttackDamage(e.target.value)}
+                  placeholder="1d6+4 psychic"
+                />
+                <button type="button" className="primary-btn" onClick={addAttack}>
+                  Add
+                </button>
               </div>
 
               <h3 style={{ marginTop: '1.5rem' }}>Saving throws</h3>
@@ -327,34 +404,72 @@ export function Sheet() {
           {tab === 'skills' && (
             <div className="panel">
               <h2>Skills</h2>
+              <p className="meta" style={{ marginTop: 0 }}>
+                Check for proficiency. Use Expertise for double proficiency bonus.
+              </p>
               <div className="list-block">
                 {SKILLS.map((skill) => {
                   const proficient = character.skillProficiencies.includes(skill.key)
+                  const expertise = (character.skillExpertise ?? []).includes(skill.key)
                   const mod = skillModifier(
                     character.abilities,
                     skill.key,
                     proficient,
                     character.proficiencyBonus,
+                    expertise,
                   )
                   return (
-                    <label key={skill.key} className="list-row" style={{ cursor: 'pointer' }}>
+                    <div key={skill.key} className="list-row">
                       <span>
-                        <input
-                          type="checkbox"
-                          checked={proficient}
-                          onChange={() => {
-                            const next = proficient
-                              ? character.skillProficiencies.filter((s) => s !== skill.key)
-                              : [...character.skillProficiencies, skill.key]
-                            patch({ skillProficiencies: next })
+                        <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={proficient}
+                            onChange={() => {
+                              const next = proficient
+                                ? character.skillProficiencies.filter((s) => s !== skill.key)
+                                : [...character.skillProficiencies, skill.key]
+                              const nextExpertise = proficient
+                                ? (character.skillExpertise ?? []).filter((s) => s !== skill.key)
+                                : (character.skillExpertise ?? [])
+                              patch({
+                                skillProficiencies: next,
+                                skillExpertise: nextExpertise,
+                              })
+                            }}
+                            style={{ width: 'auto' }}
+                          />
+                          {skill.label}{' '}
+                          <span className="meta">({skill.ability.toUpperCase()})</span>
+                        </label>
+                        <label
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            marginLeft: '0.75rem',
+                            cursor: proficient ? 'pointer' : 'not-allowed',
+                            opacity: proficient ? 1 : 0.45,
                           }}
-                          style={{ width: 'auto', marginRight: '0.55rem' }}
-                        />
-                        {skill.label}{' '}
-                        <span className="meta">({skill.ability.toUpperCase()})</span>
+                        >
+                          <input
+                            type="checkbox"
+                            checked={expertise}
+                            disabled={!proficient}
+                            onChange={() => {
+                              const list = character.skillExpertise ?? []
+                              const next = expertise
+                                ? list.filter((s) => s !== skill.key)
+                                : [...list, skill.key]
+                              patch({ skillExpertise: next })
+                            }}
+                            style={{ width: 'auto' }}
+                          />
+                          <span className="meta">Expertise</span>
+                        </label>
                       </span>
                       <strong>{formatModifier(mod)}</strong>
-                    </label>
+                    </div>
                   )
                 })}
               </div>

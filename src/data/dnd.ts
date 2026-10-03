@@ -75,6 +75,7 @@ export const BACKGROUNDS = [
   'Hermit',
   'Sailor',
   'Charlatan',
+  'Urchin',
   'Custom',
 ]
 

@@ -52,6 +52,14 @@ export interface Feature {
   description: string
 }
 
+export interface Attack {
+  id: string
+  name: string
+  bonus: string
+  damage: string
+  notes?: string
+}
+
 export interface SpellEntry {
   id: string
   name: string
@@ -69,6 +77,7 @@ export interface Character {
   name: string
   race: string
   className: string
+  subclass: string
   background: string
   alignment: string
   level: number
@@ -76,6 +85,7 @@ export interface Character {
   abilities: AbilityScores
   proficiencyBonus: number
   skillProficiencies: SkillKey[]
+  skillExpertise: SkillKey[]
   savingThrowProficiencies: AbilityKey[]
   hp: {
     current: number
@@ -90,6 +100,7 @@ export interface Character {
   conditions: Condition[]
   deathSaves: DeathSaves
   features: Feature[]
+  attacks: Attack[]
   inventory: InventoryItem[]
   spells: SpellEntry[]
   spellSlots: Record<number, { current: number; max: number }>

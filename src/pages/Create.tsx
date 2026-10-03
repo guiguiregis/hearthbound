@@ -135,6 +135,14 @@ export function Create() {
               </select>
             </label>
             <label>
+              Subclass
+              <input
+                value={draft.subclass}
+                onChange={(e) => update({ subclass: e.target.value })}
+                placeholder="e.g. Soulknife"
+              />
+            </label>
+            <label>
               Background
               <select
                 value={draft.background}
