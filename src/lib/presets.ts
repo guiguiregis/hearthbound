@@ -18,11 +18,11 @@ export function createDamakos(): Character {
     proficiencyBonus: 2,
     skillProficiencies: [
       'stealth',
-      'sleightOfHand',
       'investigation',
+      'survival',
       'deception',
     ] as SkillKey[],
-    // Sheet numbers look like proficiency only; mark expertise empty and note below.
+    // Paper: Stealth +6, Investigation +5, Survival +3, Deception +3 (prof +2, no expertise numbers).
     skillExpertise: [],
     savingThrowProficiencies: ['dex', 'int'],
     hp: { current: 35, max: 35, temp: 0 },
@@ -86,7 +86,7 @@ export function createDamakos(): Character {
     spellSlots: {},
     personality: { traits: '', ideals: '', bonds: '', flaws: '' },
     sessionNotes:
-      'Imported from paper sheet. Passive Perception 11 · Passive Insight 11. Rogue 3 normally has Expertise in two skills — toggle on the Skills tab if you use it.',
+      'Imported from paper sheet. Passive Perception 11 · Passive Insight 11. Skills from close-up: Stealth, Investigation, Survival, Deception (no expertise marked on the numbers).',
     createdAt: now,
     updatedAt: now,
   }
