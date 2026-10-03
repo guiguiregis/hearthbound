@@ -13,7 +13,7 @@ export function Roster() {
 
   if (!ready) return <p className="empty-state">Loading roster…</p>
 
-  function importDamakos() {
+  async function importDamakos() {
     const fresh = createDamakos()
     const existing = characters.find((c) => c.name === 'Damakos')
     if (existing) {
@@ -22,7 +22,7 @@ export function Roster() {
       navigate(`/characters/${existing.id}`)
       return
     }
-    addCharacter(fresh)
+    await addCharacter(fresh)
     navigate(`/characters/${fresh.id}`)
   }
 
@@ -31,7 +31,7 @@ export function Roster() {
       <div className="sheet-header">
         <div>
           <h1 className="section-title">Roster</h1>
-          <p className="section-support">Every character saved to this device.</p>
+          <p className="section-support">Your private roster on this account.</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button type="button" className="ghost-btn" onClick={importDamakos}>
@@ -119,7 +119,7 @@ export function Roster() {
                   type="button"
                   className="danger-btn"
                   onClick={() => {
-                    if (confirm(`Delete ${c.name}?`)) deleteCharacter(c.id)
+                    if (confirm(`Delete ${c.name}?`)) void deleteCharacter(c.id)
                   }}
                 >
                   Delete

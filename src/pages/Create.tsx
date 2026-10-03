@@ -70,7 +70,7 @@ export function Create() {
     return true
   }
 
-  function finish() {
+  async function finish() {
     if (!draft.name.trim()) return
     const dexAc = 10 + abilityModifier(draft.abilities.dex)
     const character = finalizeCharacter({
@@ -79,7 +79,7 @@ export function Create() {
       armorClass: draft.armorClass === 10 ? dexAc : draft.armorClass,
       hitDice: `${draft.level}d${cls.hitDie}`,
     })
-    addCharacter(character)
+    await addCharacter(character)
     navigate(`/characters/${character.id}`)
   }
 

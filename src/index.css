@@ -137,11 +137,22 @@ img {
 .ghost-btn,
 .primary-btn,
 .danger-btn,
-.icon-btn {
+.icon-btn,
+.nav-user {
   border: 1px solid transparent;
   border-radius: 999px;
   padding: 0.65rem 1.1rem;
   transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-user {
+  color: var(--brass-soft);
+  border-color: rgba(212, 168, 75, 0.28);
+  background: rgba(212, 168, 75, 0.08);
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nav-links a,
