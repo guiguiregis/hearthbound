@@ -45,6 +45,7 @@ export function createDraft(): CharacterDraft {
     currency: emptyCurrency(),
     personality: { traits: '', ideals: '', bonds: '', flaws: '' },
     sessionNotes: '',
+    sessionLog: [],
   }
 }
 
@@ -78,6 +79,7 @@ export function finalizeCharacter(draft: CharacterDraft): Character {
     attacks: draft.attacks ?? [],
     appearance: draft.appearance ?? emptyAppearance(),
     currency: draft.currency ?? emptyCurrency(),
+    sessionLog: draft.sessionLog ?? [],
     createdAt: now,
     updatedAt: now,
   }

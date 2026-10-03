@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { CONDITIONS } from '../data/dnd'
 import { useCharacters } from '../context/CharacterContext'
+import { uid } from '../lib/storage'
 import { formatModifier, hpPercent } from '../lib/stats'
-import type { Condition } from '../types/character'
+import type { Condition, SessionNote } from '../types/character'
 
 export function Session() {
   const { id = '' } = useParams()
@@ -12,6 +13,8 @@ export function Session() {
   const [damageInput, setDamageInput] = useState('1')
   const [healInput, setHealInput] = useState('1')
   const [conditionPick, setConditionPick] = useState<Condition>('Poisoned')
+  const [noteTitle, setNoteTitle] = useState('')
+  const [noteBody, setNoteBody] = useState('')
 
   const percent = useMemo(() => (character ? hpPercent(character) : 0), [character])
 
@@ -20,6 +23,16 @@ export function Session() {
 
   function patch(partial: Parameters<typeof updateCharacter>[1]) {
     updateCharacter(character!.id, partial)
+  }
+
+  function appendLog(title: string, body: string) {
+    const note: SessionNote = {
+      id: uid(),
+      title,
+      body,
+      createdAt: new Date().toISOString(),
+    }
+    patch({ sessionLog: [note, ...(character!.sessionLog ?? [])] })
   }
 
   function adjustHp(delta: number) {
@@ -49,29 +62,48 @@ export function Session() {
   }
 
   function shortRest() {
+    const note: SessionNote = {
+      id: uid(),
+      title: 'Short rest',
+      body: `Took a short rest at ${new Date().toLocaleTimeString()}.`,
+      createdAt: new Date().toISOString(),
+    }
     patch({
       hp: {
         ...character!.hp,
-        current: Math.min(character!.hp.max, character!.hp.current + Math.max(1, Math.floor(character!.hp.max * 0.25))),
+        current: Math.min(
+          character!.hp.max,
+          character!.hp.current + Math.max(1, Math.floor(character!.hp.max * 0.25)),
+        ),
       },
-      sessionNotes:
-        character!.sessionNotes +
-        (character!.sessionNotes ? '\n' : '') +
-        `• Short rest at ${new Date().toLocaleTimeString()}`,
+      sessionLog: [note, ...(character!.sessionLog ?? [])],
     })
   }
 
   function longRest() {
+    const note: SessionNote = {
+      id: uid(),
+      title: 'Long rest',
+      body: `Took a long rest at ${new Date().toLocaleTimeString()}. Feature uses reset.`,
+      createdAt: new Date().toISOString(),
+    }
+    const resetFeatures = (character!.features ?? []).map((f) =>
+      f.uses && f.uses.total > 0 ? { ...f, uses: { ...f.uses, used: 0 } } : f,
+    )
     patch({
       hp: { current: character!.hp.max, max: character!.hp.max, temp: 0 },
       deathSaves: { successes: 0, failures: 0 },
       conditions: character!.conditions.filter((c) => c === 'Exhaustion'),
-      inspiration: character!.inspiration,
-      sessionNotes:
-        character!.sessionNotes +
-        (character!.sessionNotes ? '\n' : '') +
-        `• Long rest at ${new Date().toLocaleTimeString()}`,
+      features: resetFeatures,
+      sessionLog: [note, ...(character!.sessionLog ?? [])],
     })
+  }
+
+  function addSessionNote() {
+    if (!noteTitle.trim() && !noteBody.trim()) return
+    appendLog(noteTitle.trim() || 'Session note', noteBody.trim())
+    setNoteTitle('')
+    setNoteBody('')
   }
 
   return (
@@ -276,13 +308,66 @@ export function Session() {
       </div>
 
       <div className="panel" style={{ marginTop: '1rem' }}>
-        <h2>Live notes</h2>
-        <textarea
-          value={character.sessionNotes}
-          onChange={(e) => patch({ sessionNotes: e.target.value })}
-          placeholder="Track clues, loot promises, and what the party still owes the innkeeper…"
-          style={{ minHeight: 140 }}
-        />
+        <h2>Session notes</h2>
+        <div className="form-grid">
+          <label>
+            Title
+            <input
+              value={noteTitle}
+              onChange={(e) => setNoteTitle(e.target.value)}
+              placeholder="Clue / combat / NPC"
+            />
+          </label>
+          <label className="full">
+            Note
+            <textarea
+              value={noteBody}
+              onChange={(e) => setNoteBody(e.target.value)}
+              placeholder="Track clues, loot promises, and what the party still owes the innkeeper…"
+              style={{ minHeight: 100 }}
+            />
+          </label>
+        </div>
+        <div className="actions-row">
+          <span />
+          <button type="button" className="primary-btn" onClick={addSessionNote}>
+            Add note
+          </button>
+        </div>
+        <div className="list-block" style={{ marginTop: '1rem' }}>
+          {(character.sessionLog ?? []).length === 0 && (
+            <p className="meta">No notes yet — add one above.</p>
+          )}
+          {(character.sessionLog ?? []).map((note) => (
+            <div key={note.id} className="list-row" style={{ alignItems: 'flex-start' }}>
+              <div>
+                <strong>{note.title}</strong>
+                <div className="meta">{new Date(note.createdAt).toLocaleString()}</div>
+                {note.body && <p style={{ margin: '0.35rem 0 0' }}>{note.body}</p>}
+              </div>
+              <button
+                type="button"
+                className="ghost-btn"
+                onClick={() =>
+                  patch({
+                    sessionLog: (character.sessionLog ?? []).filter((n) => n.id !== note.id),
+                  })
+                }
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+        <label style={{ marginTop: '1rem' }}>
+          Scratch pad
+          <textarea
+            value={character.sessionNotes}
+            onChange={(e) => patch({ sessionNotes: e.target.value })}
+            placeholder="Freeform overflow…"
+            style={{ minHeight: 80 }}
+          />
+        </label>
       </div>
     </section>
   )

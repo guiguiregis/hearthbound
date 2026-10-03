@@ -11,9 +11,23 @@ import {
   savingThrowModifier,
   skillModifier,
 } from '../lib/stats'
-import type { AbilityKey, Attack, Feature, InventoryItem, SpellEntry } from '../types/character'
+import type { AbilityKey, Attack, Feature, InventoryItem, SessionNote, SpellEntry } from '../types/character'
 
-type Tab = 'combat' | 'skills' | 'gear' | 'magic' | 'story'
+type Tab = 'combat' | 'skills' | 'features' | 'gear' | 'magic' | 'story'
+
+const emptyFeatureForm = {
+  name: '',
+  className: '',
+  level: '',
+  action: '',
+  save: '',
+  range: '',
+  duration: '',
+  value: '',
+  recovers: '',
+  usesTotal: '0',
+  description: '',
+}
 
 export function Sheet() {
   const { id = '' } = useParams()
@@ -21,13 +35,14 @@ export function Sheet() {
   const character = getCharacter(id)
   const [tab, setTab] = useState<Tab>('combat')
   const [itemName, setItemName] = useState('')
-  const [featureName, setFeatureName] = useState('')
-  const [featureDesc, setFeatureDesc] = useState('')
+  const [featureForm, setFeatureForm] = useState(emptyFeatureForm)
   const [spellName, setSpellName] = useState('')
   const [spellLevel, setSpellLevel] = useState(0)
   const [attackName, setAttackName] = useState('')
   const [attackBonus, setAttackBonus] = useState('+0')
   const [attackDamage, setAttackDamage] = useState('1d6')
+  const [noteTitle, setNoteTitle] = useState('')
+  const [noteBody, setNoteBody] = useState('')
 
   const percent = useMemo(() => (character ? hpPercent(character) : 0), [character])
 
@@ -55,15 +70,38 @@ export function Sheet() {
   }
 
   function addFeature() {
-    if (!featureName.trim()) return
+    if (!featureForm.name.trim()) return
+    const total = Math.max(0, Number(featureForm.usesTotal) || 0)
     const feature: Feature = {
       id: uid(),
-      name: featureName.trim(),
-      description: featureDesc.trim(),
+      name: featureForm.name.trim(),
+      description: featureForm.description.trim(),
+      className: featureForm.className.trim(),
+      level: featureForm.level === '' ? null : Number(featureForm.level) || null,
+      action: featureForm.action.trim(),
+      save: featureForm.save.trim(),
+      range: featureForm.range.trim(),
+      duration: featureForm.duration.trim(),
+      value: featureForm.value.trim(),
+      recovers: featureForm.recovers.trim(),
+      uses: { used: 0, total },
     }
     patch({ features: [...character!.features, feature] })
-    setFeatureName('')
-    setFeatureDesc('')
+    setFeatureForm(emptyFeatureForm)
+  }
+
+  function updateFeature(id: string, next: Partial<Feature>) {
+    patch({
+      features: character!.features.map((f) => (f.id === id ? { ...f, ...next } : f)),
+    })
+  }
+
+  function bumpFeatureUse(id: string, delta: number) {
+    const f = character!.features.find((x) => x.id === id)
+    if (!f) return
+    const uses = f.uses ?? { used: 0, total: 0 }
+    const used = Math.max(0, Math.min(uses.total || 99, uses.used + delta))
+    updateFeature(id, { uses: { ...uses, used } })
   }
 
   function addSpell() {
@@ -90,6 +128,19 @@ export function Sheet() {
     setAttackName('')
     setAttackBonus('+0')
     setAttackDamage('1d6')
+  }
+
+  function addSessionNote() {
+    if (!noteTitle.trim() && !noteBody.trim()) return
+    const note: SessionNote = {
+      id: uid(),
+      title: noteTitle.trim() || 'Session note',
+      body: noteBody.trim(),
+      createdAt: new Date().toISOString(),
+    }
+    patch({ sessionLog: [note, ...(character!.sessionLog ?? [])] })
+    setNoteTitle('')
+    setNoteBody('')
   }
 
   return (
@@ -168,6 +219,7 @@ export function Sheet() {
               [
                 ['combat', 'Combat'],
                 ['skills', 'Skills'],
+                ['features', 'Features'],
                 ['gear', 'Gear'],
                 ['magic', 'Magic'],
                 ['story', 'Story'],
@@ -359,43 +411,270 @@ export function Sheet() {
               </div>
 
               <h3 style={{ marginTop: '1.5rem' }}>Features</h3>
+              <p className="meta">
+                {character.features.length} on this sheet — open the Features tab to add full cards
+                (uses, range, recoveries).
+              </p>
               <div className="list-block">
-                {character.features.length === 0 && (
-                  <p className="meta">No features yet.</p>
-                )}
-                {character.features.map((f) => (
+                {character.features.slice(0, 4).map((f) => (
                   <div key={f.id} className="list-row">
                     <div>
                       <strong>{f.name}</strong>
                       {f.description && <div className="meta">{f.description}</div>}
                     </div>
-                    <button
-                      type="button"
-                      className="ghost-btn"
-                      onClick={() =>
-                        patch({
-                          features: character.features.filter((x) => x.id !== f.id),
-                        })
-                      }
-                    >
-                      Remove
-                    </button>
                   </div>
                 ))}
               </div>
-              <div className="inline-form">
-                <input
-                  value={featureName}
-                  onChange={(e) => setFeatureName(e.target.value)}
-                  placeholder="Feature name"
-                />
-                <input
-                  value={featureDesc}
-                  onChange={(e) => setFeatureDesc(e.target.value)}
-                  placeholder="Short description"
-                />
+              <button
+                type="button"
+                className="ghost-btn"
+                style={{ marginTop: '0.75rem' }}
+                onClick={() => setTab('features')}
+              >
+                Manage features
+              </button>
+            </div>
+          )}
+
+          {tab === 'features' && (
+            <div className="panel">
+              <h2>Additional features</h2>
+              <p className="meta" style={{ marginTop: 0 }}>
+                Match your paper cards: level, action economy, uses, and effect text.
+              </p>
+              <div className="list-block">
+                {character.features.length === 0 && (
+                  <p className="meta">No features yet — add one below.</p>
+                )}
+                {character.features.map((f) => {
+                  const uses = f.uses ?? { used: 0, total: 0 }
+                  return (
+                    <article key={f.id} className="list-row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: '0.65rem' }}>
+                      <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <div>
+                          <strong>{f.name}</strong>
+                          <div className="meta">
+                            {[f.className, f.level != null ? `L${f.level}` : null, f.action, f.range]
+                              .filter(Boolean)
+                              .join(' · ') || 'Feature'}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="ghost-btn"
+                          onClick={() =>
+                            patch({
+                              features: character.features.filter((x) => x.id !== f.id),
+                            })
+                          }
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <div className="form-grid" style={{ width: '100%' }}>
+                        <label>
+                          Class
+                          <input
+                            value={f.className ?? ''}
+                            onChange={(e) => updateFeature(f.id, { className: e.target.value })}
+                          />
+                        </label>
+                        <label>
+                          Level
+                          <input
+                            type="number"
+                            min={1}
+                            max={20}
+                            value={f.level ?? ''}
+                            onChange={(e) =>
+                              updateFeature(f.id, {
+                                level: e.target.value === '' ? null : Number(e.target.value) || null,
+                              })
+                            }
+                          />
+                        </label>
+                        <label>
+                          Action
+                          <input
+                            value={f.action ?? ''}
+                            onChange={(e) => updateFeature(f.id, { action: e.target.value })}
+                            placeholder="Bonus action"
+                          />
+                        </label>
+                        <label>
+                          Save
+                          <input
+                            value={f.save ?? ''}
+                            onChange={(e) => updateFeature(f.id, { save: e.target.value })}
+                          />
+                        </label>
+                        <label>
+                          Range
+                          <input
+                            value={f.range ?? ''}
+                            onChange={(e) => updateFeature(f.id, { range: e.target.value })}
+                          />
+                        </label>
+                        <label>
+                          Duration
+                          <input
+                            value={f.duration ?? ''}
+                            onChange={(e) => updateFeature(f.id, { duration: e.target.value })}
+                          />
+                        </label>
+                        <label>
+                          Value
+                          <input
+                            value={f.value ?? ''}
+                            onChange={(e) => updateFeature(f.id, { value: e.target.value })}
+                            placeholder="2d6 / PB×2"
+                          />
+                        </label>
+                        <label>
+                          Recovers
+                          <input
+                            value={f.recovers ?? ''}
+                            onChange={(e) => updateFeature(f.id, { recovers: e.target.value })}
+                            placeholder="Long rest"
+                          />
+                        </label>
+                        <label>
+                          Uses (used / total)
+                          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                            <button type="button" className="icon-btn" onClick={() => bumpFeatureUse(f.id, -1)}>
+                              −
+                            </button>
+                            <span>
+                              {uses.used} / {uses.total}
+                            </span>
+                            <button type="button" className="icon-btn" onClick={() => bumpFeatureUse(f.id, 1)}>
+                              +
+                            </button>
+                            <input
+                              type="number"
+                              min={0}
+                              value={uses.total}
+                              onChange={(e) =>
+                                updateFeature(f.id, {
+                                  uses: {
+                                    used: Math.min(uses.used, Number(e.target.value) || 0),
+                                    total: Math.max(0, Number(e.target.value) || 0),
+                                  },
+                                })
+                              }
+                              style={{ width: '4.5rem' }}
+                              aria-label="Total uses"
+                            />
+                          </div>
+                        </label>
+                        <label className="full">
+                          Effect
+                          <textarea
+                            value={f.description}
+                            onChange={(e) => updateFeature(f.id, { description: e.target.value })}
+                          />
+                        </label>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+
+              <h3 style={{ marginTop: '1.5rem' }}>Add feature</h3>
+              <div className="form-grid">
+                <label className="full">
+                  Name
+                  <input
+                    value={featureForm.name}
+                    onChange={(e) => setFeatureForm((f) => ({ ...f, name: e.target.value }))}
+                    placeholder="Shifting — Wildhunt"
+                  />
+                </label>
+                <label>
+                  Class
+                  <input
+                    value={featureForm.className}
+                    onChange={(e) => setFeatureForm((f) => ({ ...f, className: e.target.value }))}
+                    placeholder="Rogue / Racial"
+                  />
+                </label>
+                <label>
+                  Level
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={featureForm.level}
+                    onChange={(e) => setFeatureForm((f) => ({ ...f, level: e.target.value }))}
+                  />
+                </label>
+                <label>
+                  Action
+                  <input
+                    value={featureForm.action}
+                    onChange={(e) => setFeatureForm((f) => ({ ...f, action: e.target.value }))}
+                    placeholder="Bonus action"
+                  />
+                </label>
+                <label>
+                  Save
+                  <input
+                    value={featureForm.save}
+                    onChange={(e) => setFeatureForm((f) => ({ ...f, save: e.target.value }))}
+                  />
+                </label>
+                <label>
+                  Range
+                  <input
+                    value={featureForm.range}
+                    onChange={(e) => setFeatureForm((f) => ({ ...f, range: e.target.value }))}
+                  />
+                </label>
+                <label>
+                  Duration
+                  <input
+                    value={featureForm.duration}
+                    onChange={(e) => setFeatureForm((f) => ({ ...f, duration: e.target.value }))}
+                    placeholder="1 minute"
+                  />
+                </label>
+                <label>
+                  Value
+                  <input
+                    value={featureForm.value}
+                    onChange={(e) => setFeatureForm((f) => ({ ...f, value: e.target.value }))}
+                  />
+                </label>
+                <label>
+                  Recovers
+                  <input
+                    value={featureForm.recovers}
+                    onChange={(e) => setFeatureForm((f) => ({ ...f, recovers: e.target.value }))}
+                    placeholder="Long rest"
+                  />
+                </label>
+                <label>
+                  Total uses
+                  <input
+                    type="number"
+                    min={0}
+                    value={featureForm.usesTotal}
+                    onChange={(e) => setFeatureForm((f) => ({ ...f, usesTotal: e.target.value }))}
+                  />
+                </label>
+                <label className="full">
+                  Effect
+                  <textarea
+                    value={featureForm.description}
+                    onChange={(e) => setFeatureForm((f) => ({ ...f, description: e.target.value }))}
+                    placeholder="What the feature does…"
+                  />
+                </label>
+              </div>
+              <div className="actions-row">
+                <span />
                 <button type="button" className="primary-btn" onClick={addFeature}>
-                  Add
+                  Add feature
                 </button>
               </div>
             </div>
@@ -741,13 +1020,65 @@ export function Sheet() {
                   />
                 </label>
                 <label className="full">
-                  Session notes
+                  Scratch pad
                   <textarea
                     value={character.sessionNotes}
                     onChange={(e) => patch({ sessionNotes: e.target.value })}
-                    placeholder="Clues, NPC names, unfinished business…"
+                    placeholder="Quick freeform notes…"
                   />
                 </label>
+              </div>
+
+              <h3 style={{ marginTop: '1.5rem' }}>Session log</h3>
+              <p className="meta">Add as many dated notes as you want — one per beat, clue, or session.</p>
+              <div className="form-grid">
+                <label>
+                  Title
+                  <input
+                    value={noteTitle}
+                    onChange={(e) => setNoteTitle(e.target.value)}
+                    placeholder="Session 4 — docks"
+                  />
+                </label>
+                <label className="full">
+                  Note
+                  <textarea
+                    value={noteBody}
+                    onChange={(e) => setNoteBody(e.target.value)}
+                    placeholder="What happened…"
+                  />
+                </label>
+              </div>
+              <div className="actions-row">
+                <span />
+                <button type="button" className="primary-btn" onClick={addSessionNote}>
+                  Add note
+                </button>
+              </div>
+              <div className="list-block" style={{ marginTop: '1rem' }}>
+                {(character.sessionLog ?? []).length === 0 && (
+                  <p className="meta">No session log entries yet.</p>
+                )}
+                {(character.sessionLog ?? []).map((note) => (
+                  <div key={note.id} className="list-row" style={{ alignItems: 'flex-start' }}>
+                    <div>
+                      <strong>{note.title}</strong>
+                      <div className="meta">{new Date(note.createdAt).toLocaleString()}</div>
+                      {note.body && <p style={{ margin: '0.35rem 0 0' }}>{note.body}</p>}
+                    </div>
+                    <button
+                      type="button"
+                      className="ghost-btn"
+                      onClick={() =>
+                        patch({
+                          sessionLog: (character.sessionLog ?? []).filter((n) => n.id !== note.id),
+                        })
+                      }
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           )}

@@ -50,6 +50,22 @@ export interface Feature {
   id: string
   name: string
   description: string
+  level?: number | null
+  className?: string
+  action?: string
+  save?: string
+  range?: string
+  duration?: string
+  value?: string
+  recovers?: string
+  uses?: { used: number; total: number }
+}
+
+export interface SessionNote {
+  id: string
+  title: string
+  body: string
+  createdAt: string
 }
 
 export interface Attack {
@@ -130,7 +146,9 @@ export interface Character {
     bonds: string
     flaws: string
   }
+  /** Legacy single blob; still shown/edited, and migrated into sessionLog when empty. */
   sessionNotes: string
+  sessionLog: SessionNote[]
   createdAt: string
   updatedAt: string
 }

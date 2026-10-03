@@ -1,7 +1,22 @@
-import type { Character } from '../types/character'
+import type { Character, Feature } from '../types/character'
 import { emptyAppearance, emptyCurrency } from './characterFactory'
 
 const STORAGE_KEY = 'hearthbound.characters.v1'
+
+function normalizeFeature(feature: Feature): Feature {
+  return {
+    ...feature,
+    level: feature.level ?? null,
+    className: feature.className ?? '',
+    action: feature.action ?? '',
+    save: feature.save ?? '',
+    range: feature.range ?? '',
+    duration: feature.duration ?? '',
+    value: feature.value ?? '',
+    recovers: feature.recovers ?? '',
+    uses: feature.uses ?? { used: 0, total: 0 },
+  }
+}
 
 function normalize(character: Character): Character {
   return {
@@ -11,6 +26,9 @@ function normalize(character: Character): Character {
     attacks: character.attacks ?? [],
     appearance: { ...emptyAppearance(), ...(character.appearance ?? {}) },
     currency: { ...emptyCurrency(), ...(character.currency ?? {}) },
+    features: (character.features ?? []).map(normalizeFeature),
+    sessionLog: character.sessionLog ?? [],
+    sessionNotes: character.sessionNotes ?? '',
   }
 }
 

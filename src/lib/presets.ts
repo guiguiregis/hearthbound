@@ -5,8 +5,12 @@ function item(name: string, qty = 1, notes?: string) {
   return { id: uid(), name, qty, notes }
 }
 
-function feature(name: string, description: string) {
-  return { id: uid(), name, description }
+function feature(
+  name: string,
+  description: string,
+  extras: Partial<import('../types/character').Feature> = {},
+) {
+  return { id: uid(), name, description, ...extras }
 }
 
 /** Full paper-sheet import: Damakos, Wildhunt Shifter / Tiefling-flavored Rogue 3 Soulknife. */
@@ -44,26 +48,40 @@ export function createDamakos(): Character {
       feature(
         'Sneak Attack (2d6)',
         'Once per turn, extra damage on a finesse/ranged hit with advantage, or if an ally is within 5 ft of the target and you don’t have disadvantage.',
+        { className: 'Rogue', level: 1, value: '2d6' },
       ),
       feature(
         'Cunning Action',
         'Bonus action each turn: Dash, Disengage, or Hide.',
+        { className: 'Rogue', level: 2, action: 'Bonus action' },
       ),
       feature(
         'Soulknife — Psionic Power & Psychic Blades',
         'Manifest psychic blades; Psionic Power feature (Tasha’s). Attack +6, 1d6+Dex psychic.',
+        { className: 'Rogue', level: 3, action: 'Bonus action', value: '1d6+Dex' },
       ),
       feature(
         'Darkvision 60 ft',
         'See in dim light as bright, darkness as dim, out to 60 feet.',
+        { className: 'Racial', range: '60 ft' },
       ),
       feature(
         'Hellish Resistance (Tiefling)',
         'Resistance to fire damage.',
+        { className: 'Racial' },
       ),
       feature(
         'Shifting — Wildhunt',
         'Bonus action to shift (or revert) for 1 minute. Gain temp HP = proficiency bonus × 2. While shifted: advantage on Wisdom checks; no creature within 30 ft can attack you with advantage unless you are incapacitated. Uses = proficiency bonus, regain on long rest.',
+        {
+          className: 'Racial',
+          action: 'Bonus action',
+          duration: '1 minute',
+          value: 'PB×2 temp HP',
+          recovers: 'Long rest',
+          uses: { used: 0, total: 2 },
+          range: 'Self (30 ft aura vs adv.)',
+        },
       ),
       feature(
         'Languages & Proficiencies',
@@ -148,6 +166,14 @@ export function createDamakos(): Character {
     },
     sessionNotes:
       'Imported from full paper sheet. Passive Perception 11 · Passive Insight 11. Race reads as Wildhunt Shifter with Tiefling Hellish Resistance / horns. Skills: Stealth +6, Investigation +5, Survival +3, Deception +3.',
+    sessionLog: [
+      {
+        id: uid(),
+        title: 'Sheet import',
+        body: 'Damakos loaded from paper character sheet into Hearthbound.',
+        createdAt: now,
+      },
+    ],
     createdAt: now,
     updatedAt: now,
   }
