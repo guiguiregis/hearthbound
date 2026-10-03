@@ -10,7 +10,7 @@ A multi-player D&D character ledger: each user creates an account and keeps thei
 - **Session Mode** — HP, conditions, death saves, rests, action helper + dice entry
 - **Search** — find skills, attacks, gear, and notes (with bonuses)
 
-## Run (API + web)
+## Run locally (API + web)
 
 ```bash
 npm install
@@ -19,6 +19,7 @@ npm run dev
 
 - Web: `http://localhost:5173`
 - API: `http://localhost:8787` (proxied as `/api` in Vite)
+- Data: SQLite at `server/data/hearthbound.sqlite` (gitignored)
 
 ## Scripts
 
@@ -26,27 +27,41 @@ npm run dev
 |--------|---------|
 | `npm run dev` | API + Vite together |
 | `npm run dev:web` | Frontend only |
-| `npm run dev:api` | Backend only |
+| `npm run dev:api` | Backend only (SQLite) |
 | `npm run build` | Production frontend build |
+| `npm start` | API only (SQLite) |
 
-Data is stored in `server/data/hearthbound.sqlite` (gitignored).
+## Deploy on Vercel + Supabase
 
-## Vercel (frontend)
+Production uses a serverless Express handler in `api/[...path].js` with **Supabase Postgres**.
 
-1. Deploy the Vite app to Vercel (Root Directory = repo root, Build = `npm run build`, Output = `dist`).
-2. In **Project → Settings → Environment Variables**, add:
+### 1. Get the Supabase database URL
 
-| Name | Value |
-|------|--------|
-| `HEARTHBOUND_JWT_SECRET` | a long random secret (generate with `openssl rand -hex 32`) |
+1. Open [supabase.com](https://supabase.com) → your project (or create one)
+2. **Project Settings → Database → Connection string → URI**
+3. Prefer the **Transaction** pooler (port **6543**) for Vercel serverless
+4. Replace `[YOUR-PASSWORD]` with the database password
 
-Apply to **Production** (and Preview if you want). Redeploy after saving.
+### 2. Set Vercel env vars
 
-3. The Express + SQLite API in `server/` does **not** run on Vercel serverless as-is. Host the API separately (Railway, Render, Fly, a VPS) and point the frontend at it, or keep using `npm run dev` locally for full-stack.
+In **Vercel → Project → Settings → Environment Variables**:
 
-For a separate API host, set the same `HEARTHBOUND_JWT_SECRET` there and expose `PORT`.
+| Name | Value | Environments |
+|------|--------|--------------|
+| `HEARTHBOUND_JWT_SECRET` | `openssl rand -hex 32` | Production (+ Preview) |
+| `DATABASE_URL` | Supabase Postgres URI | Production (+ Preview) |
+
+`SUPABASE_DB_URL` and `POSTGRES_URL` are also accepted.
+
+### 3. Redeploy
+
+Tables (`users`, `characters`) are created automatically on first API request.
+
+Local SQLite accounts are not migrated — register again on production and recreate Damakos from the in-app preset if needed.
+
+SPA routes rewrite to `index.html`; `/api/*` is handled by the serverless function (this fixes the production **405** that happened when POSTs hit the static SPA).
 
 ## Notes
 
-- Set `HEARTHBOUND_JWT_SECRET` in production (never use the dev default).
+- Never commit real secrets; see `.env.example`.
 - SRD tips use the public [D&D 5e API](https://www.dnd5eapi.co/); full official books are not included.
