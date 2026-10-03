@@ -72,10 +72,11 @@ export function Create() {
 
   function finish() {
     if (!draft.name.trim()) return
+    const dexAc = 10 + abilityModifier(draft.abilities.dex)
     const character = finalizeCharacter({
       ...draft,
       name: draft.name.trim(),
-      armorClass: draft.armorClass || 10 + abilityModifier(draft.abilities.dex),
+      armorClass: draft.armorClass === 10 ? dexAc : draft.armorClass,
       hitDice: `${draft.level}d${cls.hitDie}`,
     })
     addCharacter(character)
