@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { DiceInput } from '../components/DiceInput'
+import { RollAssistant } from '../components/RollAssistant'
 import { CONDITIONS } from '../data/dnd'
 import { useCharacters } from '../context/CharacterContext'
 import type { RollBreakdown } from '../lib/dice'
@@ -133,7 +133,7 @@ export function Session() {
       </div>
 
       <div style={{ marginBottom: '1rem' }}>
-        <DiceInput character={character} onLog={logRoll} />
+        <RollAssistant character={character} onLog={logRoll} />
       </div>
 
       <div className="session-grid">

@@ -38,11 +38,45 @@ export function parseDiceNotation(raw: string): DiceParseResult | DiceParseError
   }
 }
 
+/** Pull a numeric bonus from strings like "+6" or "1d6+4 psychic". */
+export function extractFlatBonus(text: string): number {
+  const trimmed = text.trim()
+  const plain = trimmed.match(/^[+-]?\d+$/)
+  if (plain) return Number(plain[0])
+
+  const withDice = trimmed.match(/d\d+\s*([+-]\s*\d+)/i)
+  if (withDice) return Number(withDice[1].replace(/\s+/g, ''))
+
+  const trailing = trimmed.match(/([+-]\s*\d+)\s*[a-z]*$/i)
+  if (trailing && !/d\d+/i.test(trimmed.slice(0, trimmed.indexOf(trailing[1])))) {
+    return Number(trailing[1].replace(/\s+/g, ''))
+  }
+  return 0
+}
+
+/** Extract first NdS group and flat bonus from strings like "1d6+4 psychic" or "2d6". */
+export function parseDamageExpression(raw: string): {
+  notation: string | null
+  bonus: number
+  label: string
+} {
+  const text = raw.trim()
+  const diceMatch = text.match(/(\d*)d(\d+)/i)
+  const notation = diceMatch
+    ? `${diceMatch[1] === '' ? 1 : Number(diceMatch[1])}d${Number(diceMatch[2])}`
+    : null
+  const bonus = extractFlatBonus(text)
+  return { notation, bonus, label: text }
+}
+
 export function emptyFaces(count: number): string[] {
   return Array.from({ length: count }, () => '')
 }
 
-export function parseFaces(faces: string[], sides: number): { ok: true; values: number[] } | { ok: false; error: string } {
+export function parseFaces(
+  faces: string[],
+  sides: number,
+): { ok: true; values: number[] } | { ok: false; error: string } {
   if (faces.length === 0) return { ok: false, error: 'Add at least one die face.' }
   const values: number[] = []
   for (let i = 0; i < faces.length; i++) {
@@ -60,22 +94,6 @@ export function parseFaces(faces: string[], sides: number): { ok: true; values: 
 
 export function sumDice(values: number[]): number {
   return values.reduce((a, b) => a + b, 0)
-}
-
-/** Pull a numeric bonus from strings like "+6" or "1d6+4 psychic". */
-export function extractFlatBonus(text: string): number {
-  const trimmed = text.trim()
-  const plain = trimmed.match(/^[+-]?\d+$/)
-  if (plain) return Number(plain[0])
-
-  const withDice = trimmed.match(/d\d+\s*([+-]\s*\d+)/i)
-  if (withDice) return Number(withDice[1].replace(/\s+/g, ''))
-
-  const trailing = trimmed.match(/([+-]\s*\d+)\s*[a-z]*$/i)
-  if (trailing && !/d\d+/i.test(trimmed.slice(0, trimmed.indexOf(trailing[1])))) {
-    return Number(trailing[1].replace(/\s+/g, ''))
-  }
-  return 0
 }
 
 export interface RollBreakdown {
@@ -120,4 +138,10 @@ export function buildBreakdown(
     isNat20,
     summary,
   }
+}
+
+/** Rogue sneak attack dice by level (SRD progression). */
+export function sneakAttackDice(level: number): string {
+  const dice = Math.ceil(Math.max(1, Math.min(20, level)) / 2)
+  return `${dice}d6`
 }

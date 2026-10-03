@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ABILITY_LABELS, ABILITY_SHORT, SKILLS } from '../data/dnd'
+import type { ActionPreset } from '../lib/actions'
 import {
   buildBreakdown,
   emptyFaces,
@@ -16,23 +17,41 @@ import {
 } from '../lib/stats'
 import type { AbilityKey, Character, SkillKey } from '../types/character'
 
-type ModMode = 'none' | 'custom' | 'ability' | 'save' | 'skill' | 'attack' | 'initiative' | 'proficiency'
+type ModMode = ActionPreset['modMode']
 
 interface DiceInputProps {
   character: Character
+  preset?: ActionPreset | null
+  presetLabel?: string | null
   onLog?: (breakdown: RollBreakdown) => void
 }
 
-export function DiceInput({ character, onLog }: DiceInputProps) {
-  const [notation, setNotation] = useState('1d20')
+export function DiceInput({ character, preset, presetLabel, onLog }: DiceInputProps) {
+  const [notation, setNotation] = useState(preset?.notation ?? '1d20')
   const [faces, setFaces] = useState<string[]>([''])
-  const [modMode, setModMode] = useState<ModMode>('none')
-  const [ability, setAbility] = useState<AbilityKey>('dex')
-  const [skill, setSkill] = useState<SkillKey>('stealth')
-  const [attackId, setAttackId] = useState(character.attacks[0]?.id ?? '')
-  const [customMod, setCustomMod] = useState('0')
+  const [modMode, setModMode] = useState<ModMode>(preset?.modMode ?? 'none')
+  const [ability, setAbility] = useState<AbilityKey>(preset?.ability ?? 'dex')
+  const [skill, setSkill] = useState<SkillKey>(preset?.skill ?? 'stealth')
+  const [attackId, setAttackId] = useState(
+    preset?.attackId ?? character.attacks[0]?.id ?? '',
+  )
+  const [customMod, setCustomMod] = useState(String(preset?.customMod ?? 0))
   const [error, setError] = useState('')
   const [result, setResult] = useState<RollBreakdown | null>(null)
+
+  useEffect(() => {
+    if (!preset) return
+    setNotation(preset.notation)
+    setModMode(preset.modMode)
+    if (preset.ability) setAbility(preset.ability)
+    if (preset.skill) setSkill(preset.skill)
+    if (preset.attackId) setAttackId(preset.attackId)
+    if (preset.customMod != null) setCustomMod(String(preset.customMod))
+    const parsedPreset = parseDiceNotation(preset.notation)
+    setFaces(emptyFaces(parsedPreset.ok ? parsedPreset.spec.count : 1))
+    setResult(null)
+    setError('')
+  }, [preset])
 
   const parsed = useMemo(() => parseDiceNotation(notation), [notation])
 
@@ -121,44 +140,25 @@ export function DiceInput({ character, onLog }: DiceInputProps) {
       return
     }
     setError('')
-    const breakdown = buildBreakdown(
-      dice.notation,
-      faceResult.values,
-      dice.spec.sides,
-      modifierInfo.value,
-      modifierInfo.label,
+    setResult(
+      buildBreakdown(
+        dice.notation,
+        faceResult.values,
+        dice.spec.sides,
+        modifierInfo.value,
+        modifierInfo.label,
+      ),
     )
-    setResult(breakdown)
-  }
-
-  function applyPreset(next: string, mode: ModMode) {
-    setNotation(next)
-    setModMode(mode)
-    setResult(null)
-    setError('')
   }
 
   return (
     <div className="panel dice-panel">
-      <h2>Dice entry</h2>
+      <h2>Enter your rolls</h2>
       <p className="meta" style={{ marginTop: 0 }}>
-        Enter what you rolled on the table. We&apos;ll add your modifiers and show the total.
+        {presetLabel
+          ? `Selected: ${presetLabel}. Roll the dice below, type the faces, then calculate.`
+          : 'Enter what you rolled on the table. We add your modifiers and show the total.'}
       </p>
-
-      <div className="cta-row" style={{ marginBottom: '1rem' }}>
-        <button type="button" className="ghost-btn" onClick={() => applyPreset('1d20', 'attack')}>
-          1d20 attack
-        </button>
-        <button type="button" className="ghost-btn" onClick={() => applyPreset('1d20', 'skill')}>
-          1d20 check
-        </button>
-        <button type="button" className="ghost-btn" onClick={() => applyPreset('1d6', 'none')}>
-          1d6
-        </button>
-        <button type="button" className="ghost-btn" onClick={() => applyPreset('2d6', 'none')}>
-          2d6
-        </button>
-      </div>
 
       <div className="form-grid">
         <label>
@@ -271,7 +271,7 @@ export function DiceInput({ character, onLog }: DiceInputProps) {
       <h3 style={{ marginTop: '1.25rem' }}>Die faces you rolled</h3>
       <p className="meta">
         {parsed.ok
-          ? `Enter each ${parsed.spec.sides}-sided die (${parsed.spec.count} total). Example: 8 on 1d20, or 3 and 5 on 2d6.`
+          ? `Enter each ${parsed.spec.sides}-sided die (${parsed.spec.count} total).`
           : parsed.error}
       </p>
       <div className="dice-faces">

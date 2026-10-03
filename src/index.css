@@ -792,6 +792,48 @@ textarea {
   margin-bottom: 0.35rem;
 }
 
+.roll-assistant {
+  display: grid;
+  gap: 1rem;
+}
+
+.action-helper .action-row {
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+}
+
+.action-roll-badges {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: end;
+}
+
+.action-bonus-chip {
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+  border: 1px solid rgba(168, 181, 170, 0.2);
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+}
+
+.srd-hint {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(168, 181, 170, 0.14);
+}
+
+.srd-hint h3 {
+  margin: 0 0 0.5rem;
+}
+
+@media (min-width: 980px) {
+  .roll-assistant {
+    grid-template-columns: 1.05fr 0.95fr;
+    align-items: start;
+  }
+}
+
 @keyframes search-pulse {
   from {
     box-shadow: 0 0 0 0 rgba(212, 168, 75, 0.35);

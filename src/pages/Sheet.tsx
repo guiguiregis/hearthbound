@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { CharacterSearch } from '../components/CharacterSearch'
-import { DiceInput } from '../components/DiceInput'
+import { RollAssistant } from '../components/RollAssistant'
 import { ABILITY_LABELS, ABILITY_SHORT, SKILLS } from '../data/dnd'
 import { useCharacters } from '../context/CharacterContext'
 import type { SearchHit } from '../lib/search'
@@ -1146,7 +1146,7 @@ export function Sheet() {
           )}
 
           {tab === 'dice' && (
-            <DiceInput
+            <RollAssistant
               character={character}
               onLog={(breakdown) => {
                 const note = {
