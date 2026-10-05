@@ -31,6 +31,7 @@ function getSql() {
     )
   }
   if (!sql) {
+    // Prefer transaction pooler (:6543). Direct :5432 is IPv6-only and times out on Vercel.
     sql = postgres(url, {
       ssl: 'require',
       max: 1,
@@ -65,16 +66,18 @@ async function ensureSchema(client) {
         )
       `
       await client`CREATE INDEX IF NOT EXISTS idx_characters_user ON characters(user_id)`
-    })()
+    })().catch((err) => {
+      readyPromise = undefined
+      throw err
+    })
   }
   await readyPromise
 }
 
 export function createPostgresStore() {
-  const client = getSql()
-
   return {
     async registerUser(input) {
+      const client = getSql()
       await ensureSchema(client)
       const { cleanUser, cleanName, cleanPass } = validateRegisterInput(input)
       const existing = await client`SELECT id FROM users WHERE lower(username) = lower(${cleanUser})`
@@ -92,6 +95,7 @@ export function createPostgresStore() {
     },
 
     async loginUser({ username, password }) {
+      const client = getSql()
       await ensureSchema(client)
       const cleanUser = String(username || '').trim()
       const rows = await client`SELECT * FROM users WHERE lower(username) = lower(${cleanUser})`
@@ -103,12 +107,14 @@ export function createPostgresStore() {
     },
 
     async getUserById(id) {
+      const client = getSql()
       await ensureSchema(client)
       const rows = await client`SELECT * FROM users WHERE id = ${id}`
       return rows[0] ? publicUser(rows[0]) : null
     },
 
     async listCharacters(userId) {
+      const client = getSql()
       await ensureSchema(client)
       const rows = await client`
         SELECT data FROM characters WHERE user_id = ${userId} ORDER BY updated_at DESC
@@ -117,6 +123,7 @@ export function createPostgresStore() {
     },
 
     async createCharacter(userId, character) {
+      const client = getSql()
       await ensureSchema(client)
       const id = character.id || randomUUID()
       const now = new Date().toISOString()
@@ -134,6 +141,7 @@ export function createPostgresStore() {
     },
 
     async updateCharacter(userId, id, character) {
+      const client = getSql()
       await ensureSchema(client)
       const existing = await client`
         SELECT id FROM characters WHERE id = ${id} AND user_id = ${userId}
@@ -152,6 +160,7 @@ export function createPostgresStore() {
     },
 
     async deleteCharacter(userId, id) {
+      const client = getSql()
       await ensureSchema(client)
       const result = await client`
         DELETE FROM characters WHERE id = ${id} AND user_id = ${userId} RETURNING id
