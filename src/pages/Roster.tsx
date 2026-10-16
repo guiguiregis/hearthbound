@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCharacters } from '../context/CharacterContext'
-import { createDamakos } from '../lib/presets'
 import { searchRoster } from '../lib/search'
 
 export function Roster() {
-  const { characters, addCharacter, updateCharacter, deleteCharacter, ready } = useCharacters()
+  const { characters, deleteCharacter, ready } = useCharacters()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
 
@@ -13,18 +12,6 @@ export function Roster() {
 
   if (!ready) return <p className="empty-state">Loading roster…</p>
 
-  async function importDamakos() {
-    const fresh = createDamakos()
-    const existing = characters.find((c) => c.name === 'Damakos')
-    if (existing) {
-      const { id: _id, createdAt, ...rest } = fresh
-      updateCharacter(existing.id, { ...rest, createdAt: existing.createdAt })
-      navigate(`/characters/${existing.id}`)
-      return
-    }
-    await addCharacter(fresh)
-    navigate(`/characters/${fresh.id}`)
-  }
 
   return (
     <section className="section" style={{ marginTop: 0 }}>
