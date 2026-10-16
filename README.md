@@ -17,10 +17,6 @@ npm install
 npm run dev
 ```
 
-- Web: `http://localhost:5173`
-- API: `http://localhost:8787` (proxied as `/api` in Vite)
-- Data: SQLite at `server/data/hearthbound.sqlite` (gitignored)
-
 ## Scripts
 
 | Script | Purpose |
@@ -35,23 +31,6 @@ npm run dev
 
 Production uses a serverless Express handler in `api/[...path].js` with **Supabase Postgres**.
 
-### 1. Get the Supabase database URL
-
-1. Open [supabase.com](https://supabase.com) → your project (or create one)
-2. **Project Settings → Database → Connection string → URI**
-3. Prefer the **Transaction** pooler (port **6543**) for Vercel serverless
-4. Replace `[YOUR-PASSWORD]` with the database password
-
-### 2. Set Vercel env vars
-
-In **Vercel → Project → Settings → Environment Variables**:
-
-| Name | Value | Environments |
-|------|--------|--------------|
-| `HEARTHBOUND_JWT_SECRET` | `openssl rand -hex 32` | Production (+ Preview) |
-| `DATABASE_URL` | Supabase Postgres URI | Production (+ Preview) |
-
-`SUPABASE_DB_URL` and `POSTGRES_URL` are also accepted.
 
 ### 3. Redeploy
 
