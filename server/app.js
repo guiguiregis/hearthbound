@@ -255,8 +255,6 @@ app.post('/api/characters', requireAuth, async (req, res) => {
     const { id, name, createdAt, updatedAt, ...restData } = character
     const now = new Date().toISOString()
 
-    console.log(restData)
-
     const { data: row, error } = await supabase
       .from('characters')
       .insert({

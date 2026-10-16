@@ -34,9 +34,9 @@ export function Roster() {
           <p className="section-support">Your private roster on this account.</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button type="button" className="ghost-btn" onClick={importDamakos}>
+          {/* <button type="button" className="ghost-btn" onClick={importDamakos}>
             Import Damakos
-          </button>
+          </button> */}
           <Link className="primary-btn" to="/create">
             New character
           </Link>
