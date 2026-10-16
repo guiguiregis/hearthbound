@@ -1,29 +1,54 @@
-import { Link } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { useCharacters } from '../context/CharacterContext'
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useCharacters } from "../context/CharacterContext";
 
 export function Home() {
-  const { user, ready } = useAuth()
-  const { characters } = useCharacters()
+  const { user, ready } = useAuth();
+  const { characters } = useCharacters();
 
   return (
     <>
       <section className="hero" aria-label="Hearthbound hero">
         <div className="hero-visual" aria-hidden="true" />
         <div className="hero-copy">
+          <div className="hero-brand-container" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <img
+            src="/a_parchement_and_a_quill.png"
+            alt="Hearthbound logo"
+            className="brand-icon"
+            width="128"
+            height="128"
+          />
           <p className="hero-brand">Hearthbound</p>
-          <h1 className="hero-headline">Your living D&amp;D character ledger</h1>
+          </div>
+          <h1 className="hero-headline">
+            Your living D&amp;D character ledger
+          </h1>
           <p className="hero-support">
-            Every player gets their own account and sheets — forge a hero, keep it current, and
-            update mid-session without breaking the table flow.
+            Every player gets their own account and sheets — forge a hero, keep
+            it current, and update mid-session without breaking the table flow.
           </p>
           <div className="cta-row">
             {user ? (
               <>
-                <Link className="primary-btn" to="/create">
+                <Link className="primary-btn" to="/create" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <img
+                    src="/a_parchement_and_a_quill3.png"
+                    alt="Hearthbound logo"
+                    className="brand-icon"
+                    width="32"
+                    height="32"
+                  />
                   Create a character
                 </Link>
-                <Link className="ghost-btn" to="/characters">
+                <Link className="ghost-btn" to="/characters" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <img
+                    src="/a_parchement_and_a_quill2.png"
+                    alt="Hearthbound logo"
+                    className="brand-icon"
+                    width="32"
+                    height="32"
+                  />
                   Open roster
                 </Link>
               </>
@@ -45,19 +70,34 @@ export function Home() {
         <h2 className="section-title">At the table</h2>
         <p className="section-support">
           {user
-            ? 'Build once, then jump into Session Mode when initiative is called.'
-            : 'Sign in to see your roster. Friends can each create their own sheets.'}
+            ? "Build once, then jump into Session Mode when initiative is called."
+            : "Sign in to see your roster. Friends can each create their own sheets."}
         </p>
         {!ready ? (
           <p className="empty-state">Loading…</p>
         ) : !user ? (
-          <p className="empty-state">No account yet — join to start your first character.</p>
+          <p className="empty-state">
+            No account yet — join to start your first character.
+          </p>
         ) : characters.length === 0 ? (
-          <p className="empty-state">No characters yet — start with Create when you&apos;re ready.</p>
+          <p className="empty-state">
+            No characters yet — start with Create when you&apos;re ready.
+          </p>
         ) : (
           <div className="character-grid">
             {characters.slice(0, 3).map((c) => (
-              <Link key={c.id} className="character-tile" to={`/characters/${c.id}`}>
+              <Link
+                key={c.id}
+                className="character-tile"
+                to={`/characters/${c.id}`}
+              >
+                <img
+                  src="/a_parchement_and_a_quill.png"
+                  alt="Hearthbound logo"
+                  className="brand-icon"
+                  width="32"
+                  height="32"
+                />
                 <h3>{c.name}</h3>
                 <p className="meta">
                   Level {c.level} {c.race} {c.className}
@@ -68,5 +108,5 @@ export function Home() {
         )}
       </section>
     </>
-  )
+  );
 }

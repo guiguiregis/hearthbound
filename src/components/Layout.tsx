@@ -1,14 +1,20 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { NavLink, Outlet } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export function Layout() {
-  const { user, ready, logout } = useAuth()
+  const { user, ready, logout } = useAuth();
 
   return (
     <div className="app-shell">
       <header className="site-nav">
         <NavLink to="/" className="brand-mark" end>
-          <span className="brand-flame" aria-hidden="true" />
+          <img
+            src="/a_parchement_and_a_quill.png"
+            alt="Hearthbound logo"
+            className="brand-icon"
+            width="32"
+            height="32"
+          />
           Hearthbound
         </NavLink>
         <nav className="nav-links" aria-label="Primary">
@@ -36,5 +42,5 @@ export function Layout() {
       </header>
       <Outlet />
     </div>
-  )
+  );
 }
